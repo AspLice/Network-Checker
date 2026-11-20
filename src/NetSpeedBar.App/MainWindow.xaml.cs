@@ -1,6 +1,7 @@
 using NetSpeedBar.Core;
 using System.IO;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Windows;
 
 namespace NetSpeedBar.App;
@@ -24,6 +25,8 @@ public partial class MainWindow : System.Windows.Window
         var settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NetSpeedBar", "settings.json");
         _settingsStore = new JsonSettingsStore(settingsPath);
         _trayIcon = CreateTrayIcon();
+        NetworkChange.NetworkAddressChanged += NetworkAddressChanged;
+        Microsoft.Win32.SystemEvents.PowerModeChanged += PowerModeChanged;
         StatusText.Text = "初期化中…";
         Loaded += async (_, _) => await InitializeAsync();
     }
@@ -61,7 +64,7 @@ public partial class MainWindow : System.Windows.Window
             new ThroughputProbe(_client),
             _history,
             _networkActivity.SampleBytesPerSecond,
-            () => SuppressingProcessDetector.IsRunning(_settings.SuppressingProcessNames));
+            () => SuppressingProcessDetector.IsRunning(_settings.SuppressingProcessNames) || ForegroundWindowDetector.IsForegroundWindowFullscreen());
         scheduler.DecisionMade += (_, decision) => Dispatcher.Invoke(() => StatusText.Text = decision.Reason);
         scheduler.MeasurementCompleted += (_, result) => Dispatcher.Invoke(() =>
         {
@@ -165,10 +168,28 @@ public partial class MainWindow : System.Windows.Window
     {
         if (!_allowExit) { e.Cancel = true; Hide(); return; }
         _appCancellation.Cancel();
+        NetworkChange.NetworkAddressChanged -= NetworkAddressChanged;
+        Microsoft.Win32.SystemEvents.PowerModeChanged -= PowerModeChanged;
         _qualityMonitorCancellation?.Dispose();
         _automaticSchedulerCancellation?.Dispose();
         _trayIcon.Dispose();
         _client.Dispose();
         _appCancellation.Dispose();
+    }
+    private void NetworkAddressChanged(object? sender, EventArgs e) => Dispatcher.Invoke(() =>
+    {
+        StatusText.Text = "ネットワーク切替を検出しました。品質監視を再開します。";
+        StartQualityMonitoring();
+        StartAutomaticLightweightScheduler();
+    });
+    private void PowerModeChanged(object? sender, Microsoft.Win32.PowerModeChangedEventArgs e)
+    {
+        if (e.Mode != Microsoft.Win32.PowerModes.Resume) return;
+        Dispatcher.Invoke(() =>
+        {
+            StatusText.Text = "スリープ復帰を検出しました。品質監視を再開します。";
+            StartQualityMonitoring();
+            StartAutomaticLightweightScheduler();
+        });
     }
 }
