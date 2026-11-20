@@ -29,6 +29,13 @@ public sealed record MeasurementResult(
     long TotalMeasuredBytes,
     bool Cancelled);
 
+public sealed record QualityStatistics(
+    int SampleCount,
+    double SuccessRate,
+    TimeSpan? MedianHttpRoundTrip,
+    TimeSpan? Jitter,
+    ConnectionState State);
+
 public static class ThroughputCalculator
 {
     public static double MegabitsPerSecond(long bytes, TimeSpan elapsed)

@@ -11,7 +11,9 @@ var tests = new (string Name, Action Run)[]
     ("elevated HTTP RTT blocks automatic estimate", () => False(AutomaticMeasurementGate.Decide(MonitorSettings.Create(Profile.Balanced), 0, false, TimeSpan.FromMilliseconds(101), TimeSpan.FromMilliseconds(50), null, DateTimeOffset.UtcNow).Allowed)),
     ("download payload budget enforced", DownloadBudgetIsEnforced),
     ("quality timeout maps to offline", QualityTimeoutMapsToOffline),
-    ("settings JSON round trip", SettingsRoundTrip)
+    ("settings JSON round trip", SettingsRoundTrip),
+    ("quality statistics calculate jitter and success", QualityStatisticsAreCalculated),
+    ("upload payload budget enforced", UploadBudgetIsEnforced)
 };
 var failures = 0;
 foreach (var (name, run) in tests) { try { run(); Console.WriteLine($"PASS {name}"); } catch (Exception ex) { failures++; Console.Error.WriteLine($"FAIL {name}: {ex.Message}"); } }
@@ -39,6 +41,32 @@ static void SettingsRoundTrip()
     var actual = store.LoadAsync().GetAwaiter().GetResult();
     Equal(Profile.Balanced, actual.Profile);
     Equal(expected.LightweightBudget.MaxBytes, actual.LightweightBudget.MaxBytes);
+}
+static void QualityStatisticsAreCalculated()
+{
+    var history = new QualityHistory();
+    history.Add(new(DateTimeOffset.UtcNow, TimeSpan.FromMilliseconds(10), true, ConnectionState.Healthy));
+    history.Add(new(DateTimeOffset.UtcNow, TimeSpan.FromMilliseconds(30), true, ConnectionState.Healthy));
+    history.Add(new(DateTimeOffset.UtcNow, null, false, ConnectionState.Offline));
+    var result = history.GetStatistics();
+    Equal(3, result.SampleCount);
+    Equal(2d / 3d, result.SuccessRate);
+    Equal(TimeSpan.FromMilliseconds(20), result.Jitter!);
+    Equal(ConnectionState.Offline, result.State);
+}
+static void UploadBudgetIsEnforced()
+{
+    long received = 0;
+    using var client = new HttpClient(new StubHandler(request =>
+    {
+        received = request.Content!.ReadAsByteArrayAsync().GetAwaiter().GetResult().LongLength;
+        return new(HttpStatusCode.OK);
+    }));
+    var budget = new MeasurementBudget(1024, TimeSpan.FromSeconds(2), 1, TimeSpan.Zero);
+    var result = new ThroughputProbe(client).UploadAsync(new Uri("https://example.test/upload"), MeasurementKind.FullSpeed, budget, CancellationToken.None).GetAwaiter().GetResult();
+    Equal(1024L, received);
+    Equal(1024L, result.PayloadBytes);
+    True(result.IsComplete);
 }
 static void True(bool value) { if (!value) throw new Exception("Expected true."); }
 static void False(bool value) { if (value) throw new Exception("Expected false."); }

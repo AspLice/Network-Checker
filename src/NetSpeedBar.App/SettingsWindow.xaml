@@ -1,0 +1,14 @@
+<Window x:Class="NetSpeedBar.App.SettingsWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="NetSpeedBar 設定" Width="560" Height="600" WindowStartupLocation="CenterOwner">
+  <ScrollViewer><StackPanel Margin="24">
+    <TextBlock Text="測定モード" FontWeight="SemiBold"/><ComboBox x:Name="ProfileBox" Margin="0,6,0,12"><ComboBoxItem Content="DataSaver"/><ComboBoxItem Content="Balanced"/><ComboBoxItem Content="Diagnostics"/></ComboBox>
+    <TextBlock Text="省通信: Ping 相当の HTTP 品質監視のみ。バランス: 30 分ごとの軽量推定。診断: 5 分ごとの軽量推定。" TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,12"/>
+    <CheckBox x:Name="AutomaticBox" Content="自動軽量測定を有効化（他通信・FiveM 等の実行中・遅延上昇時は停止）" Margin="0,0,0,8"/>
+    <CheckBox x:Name="StartupBox" Content="Windows ログイン時に開始" Margin="0,0,0,16"/>
+    <TextBlock Text="品質監視 URL"/><TextBox x:Name="QualityEndpointBox" Margin="0,4,0,10"/>
+    <TextBlock Text="ダウンロード測定 URL"/><TextBox x:Name="DownloadEndpointBox" Margin="0,4,0,10"/>
+    <TextBlock Text="アップロード測定 URL"/><TextBox x:Name="UploadEndpointBox" Margin="0,4,0,10"/>
+    <TextBlock Text="他通信による自動測定抑止しきい値 (KB/秒)"/><TextBox x:Name="TrafficThresholdBox" Margin="0,4,0,10"/>
+    <TextBlock Text="自動測定を停止するプロセス名（カンマ区切り）"/><TextBox x:Name="ProcessNamesBox" Margin="0,4,0,16"/>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><Button Padding="14,7" Margin="0,0,8,0" Click="Cancel_Click" Content="キャンセル"/><Button Padding="14,7" Click="Save_Click" Content="保存"/></StackPanel>
+  </StackPanel></ScrollViewer>
+</Window>

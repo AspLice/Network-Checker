@@ -21,7 +21,8 @@ public sealed record MonitorSettings(
     bool AutomaticLightweightEnabled,
     long BusyTrafficThresholdBytesPerSecond,
     double LatencySuppressionMultiplier,
-    IReadOnlyList<string> SuppressingProcessNames)
+    IReadOnlyList<string> SuppressingProcessNames,
+    bool StartWithWindows)
 {
     public static MonitorSettings Create(Profile profile = Profile.DataSaver) => profile switch
     {
@@ -39,5 +40,5 @@ public sealed record MonitorSettings(
         TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2),
         new MeasurementBudget(2 * 1024 * 1024, TimeSpan.FromSeconds(3), 1, automaticInterval),
         new MeasurementBudget(200 * 1024 * 1024, TimeSpan.FromSeconds(30), 4, TimeSpan.Zero),
-        automatic, 256 * 1024, 2.0, Array.Empty<string>());
+        automatic, 256 * 1024, 2.0, new[] { "FiveM", "FiveM_GTAProcess" }, false);
 }
