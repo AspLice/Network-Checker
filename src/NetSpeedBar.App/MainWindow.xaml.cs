@@ -11,7 +11,7 @@ public partial class MainWindow : System.Windows.Window
     public MainWindow()
     {
         InitializeComponent();
-        StatusText.Text = "省通信モード: 自動スループット測定は無効です。測定先は設定ファイルで明示的に指定してください。";
+        StatusText.Text = "省通信モード: Cloudflare Speed Test を使用可能です。自動スループット測定は無効で、手動測定は 2 MB・3 秒までです。";
     }
     private async void QualityButton_Click(object sender, RoutedEventArgs e)
     {

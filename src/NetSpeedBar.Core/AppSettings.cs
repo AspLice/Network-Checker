@@ -31,7 +31,11 @@ public sealed record MonitorSettings(
     };
 
     private static MonitorSettings Default(Profile profile, TimeSpan automaticInterval, bool automatic) => new(
-        QualityEndpoint: null, DownloadEndpoint: null, UploadEndpoint: null, profile,
+        // Cloudflare's public speedtest engine documents these endpoints. Automatic
+        // throughput remains opt-in; callers still apply the local byte/time budget.
+        QualityEndpoint: new Uri("https://speed.cloudflare.com/__down?bytes=0"),
+        DownloadEndpoint: new Uri("https://speed.cloudflare.com/__down"),
+        UploadEndpoint: new Uri("https://speed.cloudflare.com/__up"), profile,
         TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2),
         new MeasurementBudget(2 * 1024 * 1024, TimeSpan.FromSeconds(3), 1, automaticInterval),
         new MeasurementBudget(200 * 1024 * 1024, TimeSpan.FromSeconds(30), 4, TimeSpan.Zero),

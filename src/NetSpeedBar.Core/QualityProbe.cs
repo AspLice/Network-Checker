@@ -11,7 +11,9 @@ public sealed class QualityProbe(HttpClient client)
         var started = Stopwatch.GetTimestamp();
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Head, endpoint);
+            // Cloudflare's documented latency request is GET /__down?bytes=0.
+            // Reading headers only keeps this quality check payload-free.
+            using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, linked.Token).ConfigureAwait(false);
             var elapsed = Stopwatch.GetElapsedTime(started);
             return response.IsSuccessStatusCode
